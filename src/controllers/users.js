@@ -173,8 +173,9 @@ module.exports = {
   socialMediaLogin(req, res) {
     const params = req.body;
     const email = params.email;
-    const photo = params.photo;
+    const photoUrl = params.photoUrl;
     const name = params.name;
+    console.log(params);
     const user = User.findAll({
       raw: true,
       where: {
