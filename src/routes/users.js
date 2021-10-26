@@ -6,6 +6,7 @@ const router = new express.Router()
 router.get("/api/v1/token", usersController.testToken);
 router.get("/api/v1/users", auth, usersController.list);
 router.post("/api/v1/users/login", usersController.login);
+router.post("/api/v1/users/social_media_login", usersController.socialMediaLogin);
 router.post("/api/v1/users/register", usersController.register);
 router.get("/api/v1/users/me", auth, usersController.me);
 router.get("/api/v1/users/:id", auth, usersController.retrieve);

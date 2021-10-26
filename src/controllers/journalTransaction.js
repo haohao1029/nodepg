@@ -4,6 +4,7 @@ const JournalTransactionHelper = require("../helpers").JournalTransaction;
 const JournalEntryHelper = require("../helpers").JournalEntry;
 const Sequelize = require("sequelize");
 const common = require("../common");
+const { response, responseAll } = require("../common");
 
 module.exports = {
   list(req, res) {
@@ -24,8 +25,9 @@ module.exports = {
           pagination["perPage"] = length;
         }
 
-        data = JournalTransactionHelper.lists(reqQuery, reqParams, reqBody)
+        JournalTransactionHelper.lists(reqQuery, reqParams, reqBody)
           .then((result) => {
+            
             common.responseAll(
               res,
               200,
@@ -39,24 +41,29 @@ module.exports = {
       })
       .catch((error) => common.response(res, 400, false, error.message));
   },
-  retrieve(req, res) {
+  async retrieve(req, res) {
     const id = req.params.id;
-    const JournalTransaction = JournalTransactionHelper.retrieve(id);
+    journalEntries = await JournalEntryHelper.lists({
+      journalTransactionId: id
+    })
+
     return JournalTransactionHelper.retrieve(id)
       .then((result) => {
         if (!result) {
-          return res.status(404).send({
-            message: "Journal Transaction Not Found",
-          });
+          return response(res, 404, false, "Journal Transaction Where Id " + id + " Not Found")
         }
-        return res.status(200).send(result);
+        result["dataValues"]["journalEntries"] = journalEntries;
+        return response(res, 200, true, "Retrive Journal Transaction ID = " + id, result);
       })
-      .catch((error) => res.status(400).send(error));
+      .catch((error) => {
+        response(res, 400, false, error.message)
+      });
   },
   create(req, res) {
     const params = req.body;
     const journalEntries = req.body.journalEntries;
     params["teamId"] = req.user.teamId;
+
 
     return JournalTransactionHelper.create(params)
       .then((result) => {        
@@ -64,14 +71,14 @@ module.exports = {
           journalEntries[i]["journalTransactionId"] = result.dataValues.id;
           JournalEntry.create(journalEntries[i]);
         }
-
-        res.status(201).send(result);
+        return response(res, 200, true, "sucesss create JournalTransaction", result);
       })
       .catch((error) => {
         console.log(error);
         res.status(400).send(error);
       });
   },
+
   update(req, res) {
     const id = req.params.id;
     const params = req.body;
@@ -96,13 +103,11 @@ module.exports = {
         .catch((error) => res.status(400).send(error));
     }).catch((error) => res.status(400).send(error));
   },
-  destroy(req, res) {
+
+  async destroy(req, res) {
+
     const id = req.params.id;
     const JournalTransaction = JournalTransactionHelper.retrieve(id);
-    const journalEntries = JournalEntry.findAll({
-      raw: true,
-      where: { journalTransactionId: id },
-    });
 
     return JournalTransaction.then((result) => {
       if (!result) {
@@ -112,11 +117,7 @@ module.exports = {
       }
       return JournalTransactionHelper.delete(result)
         .then(() => {
-          for (i = 0; i < journalEntries.length; i++) {
-            journalEntry = journalEntries[i];
-            JournalEntry.destroy(journalEntry)
-          }
-
+          JournalEntryHelper.deleteAll(id);
           res.status(204).send();
         })
         .catch((error) => res.status(400).send(error));

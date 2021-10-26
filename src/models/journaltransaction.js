@@ -22,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
   JournalTransaction.init(
     {
       date: DataTypes.STRING,
+      totalAmount: DataTypes.FLOAT,
     },
     {
       sequelize,

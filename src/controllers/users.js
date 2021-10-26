@@ -63,8 +63,7 @@ module.exports = {
 
     return UserHelper.create(params)
       .then((result) => {
-
-        res.status(201).send(result)
+        res.status(201).send(result);
       })
       .catch((error) => {
         console.log(error);
@@ -116,7 +115,7 @@ module.exports = {
       },
     })
       .then((result) => {
-        console.log(result)
+        console.log(result);
         const data = result[0];
         passwordMatch = UserHelper.isMatch(password, data.password)
           .then((result) => {
@@ -137,23 +136,19 @@ module.exports = {
 
     const team = TeamHelper.create({
       name: params.name,
-    }).then(result => {
+    }).then((result) => {
       params["teamId"] = result.dataValues.id;
 
-    
-    const user = User.create(params, {raw: true})
-      .then((result) => {
-        console.log(result.dataValues)
-        teamId = result.dataValues.teamId;
-        AccountHelper.createDefaultValue(teamId)
-        const token = UserHelper.generateAuthToken(result.dataValues);
-        result.dataValues["token"] = token;
-        console.log(result)
-        res.status(201).send(result);
-      })
-      .catch((error) => res.status(400).send(error));
-    })
-
+      const user = User.create(params, { raw: true })
+        .then((result) => {
+          teamId = result.dataValues.teamId;
+          AccountHelper.createDefaultValue(teamId);
+          const token = UserHelper.generateAuthToken(result.dataValues);
+          result.dataValues["token"] = token;
+          res.status(201).send(result);
+        })
+        .catch((error) => res.status(400).send(error));
+    });
   },
   me(req, res) {
     const id = req.user.id;
@@ -174,5 +169,41 @@ module.exports = {
       .send(
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoyOCwibmFtZSI6ImdhbiIsImVtYWlsIjoiZ2FuQGdhbi5nYW4iLCJwYXNzd29yZCI6IiQyYSQwOCRvcGtyWHV2Lmt3MldNVzRiU25RMHRPTi9XQXpvS2x5YWtXSzBRcjdnQ1FaQTdzZ3VIWXhFdSIsImNyZWF0ZWRBdCI6IjIwMjEtMDktMTVUMDk6Mzc6NDAuMzA4WiIsInVwZGF0ZWRBdCI6IjIwMjEtMDktMTVUMDk6Mzc6NDAuMzA4WiIsInJvbGVJZCI6bnVsbCwidGVhbUlkIjpudWxsfSwiaWF0IjoxNjMxNzAwMzM3fQ.-lC8VQrsug1oxfsfyTV_PkPb5DOICeAf-8xpUG7-LM8"
       );
+  },
+  socialMediaLogin(req, res) {
+    const params = req.body;
+    const email = params.email;
+    const photo = params.photo;
+    const name = params.name;
+    const user = User.findAll({
+      raw: true,
+      where: {
+        [Sequelize.Op.and]: [{ email: email }],
+      },
+    }).then((result) => {
+      console.log(result);
+      if (result.length == 0) {
+        const team = TeamHelper.create({
+          email: params.email,
+        }).then((result) => {
+          params["teamId"] = result.dataValues.id;
+
+          const user = User.create(params, { raw: true })
+            .then((result) => {
+              teamId = result.dataValues.teamId;
+              AccountHelper.createDefaultValue(teamId);
+              const token = UserHelper.generateAuthToken(result.dataValues);
+              result.dataValues["token"] = token;
+              res.status(201).send(result);
+            })
+            .catch((error) => res.status(400).send(error));
+        });
+      } else {
+        data = result[0];
+        const token = UserHelper.generateAuthToken(data);
+        data["token"] = token;
+        res.status(200).send(data);
+      }
+    });
   },
 };

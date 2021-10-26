@@ -7,7 +7,7 @@ module.exports = {
         }
         res.status(status).send(params)
     },
-    responseAll (res, status, success, message, pagination, data = {}) {
+    responseAll(res, status, success, message, pagination, data = {}) {
         params = {
             "success": success,
             "message": message,
@@ -16,5 +16,5 @@ module.exports = {
         }
         res.status(status).send(params)
     }
-
+    
 }
